@@ -1,0 +1,28 @@
+{
+  "name": "@toolbarthomas/ondergoed",
+  "version": "0.1.0",
+  "description": "String utilities",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "predev": "node ./node/build.mjs",
+    "dev": "node ./dist/index.js",
+    "tsc": "tsc --noEmit",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "String",
+    "Javascript",
+    "Vanilla",
+    "Module"
+  ],
+  "author": "Thomas van der Velde <contact@toolbarthomas.net>",
+  "license": "MIT",
+  "devDependencies": {
+    "@toolbarthomas/argumentje": "^0.2.0",
+    "@types/node": "^24.10.0",
+    "esbuild": "^0.25.12",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.3"
+  }
+}
