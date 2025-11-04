@@ -163,7 +163,7 @@ export class Ondergoed {
    *
    * @param value The encoded string
    */
-  decode(value: string) {
+  decode(value?: string) {
     if (!value || !value.length) {
       return
     }
@@ -226,7 +226,7 @@ export class Ondergoed {
    *
    * @param value The string to encode
    */
-  encode(value: string) {
+  encode(value?: string) {
     if (!value || !value.length) {
       return
     }

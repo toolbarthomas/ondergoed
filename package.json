@@ -12,12 +12,15 @@
     "predev": "node ./node/build.mjs",
     "dev": "node ./dist/index.js",
     "tsc": "tsc --noEmit",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "pretest": "npm run tsc",
+    "test": "node ./node/test.mjs",
+    "posttest": "node node_modules/mocha/bin/mocha.js \"dist/tests/*.test.cjs\""
   },
   "files": [
     "./dist/index.js",
     "./dist/index.cjs",
-    "./src",
+    "./src/index.ts",
+    "./src/types",
     "./node",
     "./tsconfig.json",
     "./README.md"
@@ -32,8 +35,11 @@
   "license": "MIT",
   "devDependencies": {
     "@toolbarthomas/argumentje": "^0.2.0",
+    "@types/mocha": "^10.0.10",
     "@types/node": "^24.10.0",
     "esbuild": "^0.25.12",
+    "glob": "^11.0.3",
+    "mocha": "^11.7.4",
     "prettier": "^3.6.2",
     "typescript": "^5.9.3"
   }
