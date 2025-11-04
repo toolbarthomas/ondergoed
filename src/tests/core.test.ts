@@ -3,7 +3,7 @@ import { Ondergoed } from '../index'
 import assert, { equal } from 'assert'
 import { describe, it } from 'mocha'
 
-describe('Default Encode decode', () => {
+describe('Default encode/decode', () => {
   const codec = new Ondergoed()
 
   const mock = 'Hello World'
@@ -16,7 +16,7 @@ describe('Default Encode decode', () => {
   it('Match from encoded', () => assert.equal(decoded, mock))
 })
 
-describe('Custom Encode decode', () => {
+describe('Custom encode/decode', () => {
   const codec = new Ondergoed({ charset: 'Lorem Ipsum Si Dolor Amet' })
 
   const mock = 'Hello World'
