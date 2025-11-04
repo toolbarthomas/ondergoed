@@ -1,4 +1,4 @@
-import { Charset, Encoding, Options } from './types'
+import { Charset, Options } from './types'
 
 /**
  * Ondergoed Transforms strings into randomized, variable-length character
@@ -11,7 +11,6 @@ import { Charset, Encoding, Options } from './types'
  */
 export class Ondergoed {
   charset: Charset
-  encoding: Encoding
 
   /**
    * Default character set: lowercase a-z.
@@ -155,7 +154,6 @@ export class Ondergoed {
 
   constructor(options?: Options) {
     this.charset = Ondergoed.defineCharset(options?.charset)
-    this.encoding = 'utf-8'
   }
 
   /**
