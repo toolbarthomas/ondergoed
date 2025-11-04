@@ -2,15 +2,26 @@
   "name": "@toolbarthomas/ondergoed",
   "version": "0.1.0",
   "description": "String utilities",
-  "main": "dist/index.js",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
   "types": "./src/index.ts",
   "type": "module",
   "scripts": {
+    "prebuild": "npm run dev",
+    "build": "node ./node/build.mjs --format=cjs && node ./node/build.mjs --format=cjs -minify && node ./node/build.mjs -minify",
     "predev": "node ./node/build.mjs",
     "dev": "node ./dist/index.js",
     "tsc": "tsc --noEmit",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "files": [
+    "./dist/index.js",
+    "./dist/index.cjs",
+    "./src",
+    "./node",
+    "./tsconfig.json",
+    "./README.md"
+  ],
   "keywords": [
     "String",
     "Javascript",
