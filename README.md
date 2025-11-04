@@ -11,8 +11,6 @@ Ondergoed is a simple character-based encoder that transforms strings into rando
 ## Usage
 
 ```js
-import { Ondergoed } from "@toolbarthomas/ondergoed";
-
 // Create an encoder instance (optional custom charset)
 const encoder = new Ondergoed({
   charset: undefined // Use default charset or provide one or multiple strings
