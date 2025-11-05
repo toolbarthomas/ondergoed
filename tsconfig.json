@@ -19,7 +19,6 @@
     ],
     "typeRoots": [
       "./src",
-      "./src/_types",
       "node_modules/@types",
     ],
   },

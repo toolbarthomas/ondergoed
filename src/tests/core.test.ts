@@ -48,7 +48,7 @@ describe('Custom encode/decode', () => {
 describe('Benchmark', () => {
   const codec = new Ondergoed()
 
-  const iterations = 0x400
+  const iterations = 0x1000
   const size = 0x200
   let i = 0
 
