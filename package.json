@@ -20,7 +20,6 @@
     "./dist/index.js",
     "./dist/index.cjs",
     "./src/index.ts",
-    "./src/types",
     "./node",
     "./tsconfig.json",
     "./README.md"

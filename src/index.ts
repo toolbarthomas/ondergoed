@@ -21,7 +21,14 @@ export class Ondergoed {
   lookupA: Map<string, number>
   lookupB: Map<string, number>
 
-  /** Default lowercase alphabet charset */
+  /**
+   * Fixed byte range that should not change.
+   */
+  static RANGE = 8
+
+  /**
+   * Default lowercase alphabet charset.
+   */
   static CHARSET = Array.from({ length: 26 }, (_, key) => String.fromCharCode(key + 97))
 
   /**
@@ -50,7 +57,7 @@ export class Ondergoed {
    * Ensures that it contains alphabetic characters only,
    * is split correctly into two halves, and is unique.
    */
-  static defineCharset(charset?: Options['charset']): Charset {
+  static defineCharset(charset?: Options['charset']) {
     if (!charset) {
       return Ondergoed.defaultCharset()
     }
@@ -60,16 +67,17 @@ export class Ondergoed {
     }
 
     const regex = /^[a-zA-Z]+$/
-    let result: Charset | undefined
+
+    let result: string[] | undefined
     let letters: string | undefined
 
     if (typeof charset === 'string' && charset.length > 2) {
       letters = charset.split('').reduce((chars, ch) => {
         const lower = ch.toLowerCase()
+
         return ch.match(regex) && !chars.includes(lower) ? chars + lower : chars
       }, '')
 
-      // pad missing letters
       while (letters.length < 9) {
         for (const c of Ondergoed.CHARSET) {
           if (!letters.includes(c)) letters += c
@@ -113,7 +121,9 @@ export class Ondergoed {
    * Encode a UTF-8 string into a randomized, variable-length encoded form.
    */
   encode(value?: string, encoding?: BufferEncoding) {
-    if (!value || !value.length) return
+    if (!value || !value.length) {
+      return
+    }
 
     const bytes = Buffer.from(value, encoding || 'utf-8')
     const encoded: string[] = []
@@ -125,7 +135,7 @@ export class Ondergoed {
 
     for (let i = 0; i < bytes.length; i++) {
       const byte = bytes[i]
-      const bits = byte.toString(2).padStart(8, '0') // preserve MSB→LSB order
+      const bits = byte.toString(2).padStart(Ondergoed.RANGE, '0') // preserve MSB→LSB order
       const position = i % 2
       const charset = position ? odd : even
       const charsetLen = position ? lenOdd : lenEven
@@ -133,22 +143,23 @@ export class Ondergoed {
       let runChar = bits[0]
       let runLength = 1
 
-      for (let j = 1; j < 8; j++) {
+      for (let j = 1; j < Ondergoed.RANGE; j++) {
         if (bits[j] === runChar) {
           runLength++
         } else {
           const idx = (runLength - 1) % charsetLen
           const ch = charset[idx]
+
           encoded.push(runChar === '0' ? ch : ch.toUpperCase())
           runChar = bits[j]
           runLength = 1
         }
       }
 
-      // final run
-      const idx = (runLength - 1) % charsetLen
-      const ch = charset[idx]
-      encoded.push(runChar === '0' ? ch : ch.toUpperCase())
+      const address = (runLength - 1) % charsetLen
+      const result = charset[address]
+
+      encoded.push(runChar === '0' ? result : result.toUpperCase())
     }
 
     return encoded.join('')
@@ -159,10 +170,12 @@ export class Ondergoed {
    * Uses precomputed lookup maps and accurate byte-parity tracking.
    */
   decode(value?: string, encoding?: BufferEncoding) {
-    if (!value || !value.length) return
+    if (!value || !value.length) {
+      return
+    }
 
-    const evenLookup = this.lookupA
-    const oddLookup = this.lookupB
+    const lookupA = this.lookupA
+    const lookupB = this.lookupB
 
     const bits: string[] = []
     let bitCount = 0
@@ -172,16 +185,17 @@ export class Ondergoed {
       const c = value[i]
       const lower = c.toLowerCase()
       const position = byteIndex % 2
-      const lookup = position ? oddLookup : evenLookup
+      const lookup = position ? lookupB : lookupA
       const idx = lookup.get(lower) ?? 0
       const runLen = idx + 1
       const bit = c === lower ? '0' : '1'
       const segment = bit.repeat(runLen)
+
       bits.push(segment)
       bitCount += runLen
 
-      while (bitCount >= 8) {
-        bitCount -= 8
+      while (bitCount >= Ondergoed.RANGE) {
+        bitCount -= Ondergoed.RANGE
         byteIndex++
       }
     }
@@ -189,9 +203,9 @@ export class Ondergoed {
     const joined = bits.join('')
     const bytes: number[] = []
 
-    for (let i = 0; i < joined.length; i += 8) {
-      const chunk = joined.slice(i, i + 8)
-      if (chunk.length < 8) break
+    for (let i = 0; i < joined.length; i += Ondergoed.RANGE) {
+      const chunk = joined.slice(i, i + Ondergoed.RANGE)
+      if (chunk.length < Ondergoed.RANGE) break
       bytes.push(parseInt(chunk, 2))
     }
 
