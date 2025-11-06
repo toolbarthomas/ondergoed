@@ -32,6 +32,53 @@ export class Ondergoed {
   static CHARSET = Array.from({ length: 26 }, (_, key) => String.fromCharCode(key + 97))
 
   /**
+   * Decode an encoded string back into its original format.
+   * Uses precomputed lookup maps and accurate byte-parity tracking.
+   */
+  decode(value?: string, encoding?: BufferEncoding) {
+    if (!value || !value.length) {
+      return
+    }
+
+    const lookupA = this.lookupA
+    const lookupB = this.lookupB
+
+    const bits: string[] = []
+    let currentBit = 0
+    let currentByte = 0
+
+    for (let i = 0; i < value.length; i++) {
+      const c = value[i]
+      const lower = c.toLowerCase()
+      const position = currentByte % 2
+      const lookup = position ? lookupB : lookupA
+      const ii = lookup.get(lower) ?? 0
+      const count = ii + 1
+      const bit = c === lower ? '0' : '1'
+      const segment = bit.repeat(count)
+
+      bits.push(segment)
+      currentBit += count
+
+      while (currentBit >= Ondergoed.RANGE) {
+        currentBit -= Ondergoed.RANGE
+        currentByte++
+      }
+    }
+
+    const joined = bits.join('')
+    const bytes: number[] = []
+
+    for (let i = 0; i < joined.length; i += Ondergoed.RANGE) {
+      const chunk = joined.slice(i, i + Ondergoed.RANGE)
+      if (chunk.length < Ondergoed.RANGE) break
+      bytes.push(parseInt(chunk, 2))
+    }
+
+    return Buffer.from(bytes).toString(encoding || 'utf8')
+  }
+
+  /**
    * Generates a randomized charset split into two halves.
    * Each half is used to encode even and odd bytes separately.
    */
@@ -80,28 +127,36 @@ export class Ondergoed {
 
       while (letters.length < 9) {
         for (const c of Ondergoed.CHARSET) {
-          if (!letters.includes(c)) letters += c
-          if (letters.length >= 9) break
+          if (!letters.includes(c)) {
+            letters += c
+          }
+
+          if (letters.length >= 9) {
+            break
+          }
         }
       }
 
       const stop = Math.floor(letters.length / 2)
+
       result = [letters.substring(0, stop), letters.substring(stop)]
     } else if (Array.isArray(charset)) {
       if (!charset[0]?.length || !charset[1]?.length) {
         return Ondergoed.defaultCharset()
       }
+
       result = [charset[0].toLowerCase(), charset[1].toLowerCase()]
     } else {
       return Ondergoed.defaultCharset()
     }
 
-    const [zero, one] = result
-    if (!zero.match(regex) || !one.match(regex)) {
+    const [a, b] = result
+
+    if (!a.match(regex) || !b.match(regex)) {
       return Ondergoed.defaultCharset()
     }
 
-    if (zero.split('').some((z) => one.includes(z))) {
+    if (a.split('').some((c) => b.includes(c))) {
       return Ondergoed.defaultCharset()
     }
 
@@ -128,87 +183,41 @@ export class Ondergoed {
     const bytes = Buffer.from(value, encoding || 'utf-8')
     const encoded: string[] = []
 
-    const even = this.charsA
-    const odd = this.charsB
-    const lenEven = even.length
-    const lenOdd = odd.length
+    const a = this.charsA
+    const b = this.charsB
+    const sizeA = a.length
+    const sizeB = b.length
 
     for (let i = 0; i < bytes.length; i++) {
       const byte = bytes[i]
-      const bits = byte.toString(2).padStart(Ondergoed.RANGE, '0') // preserve MSB→LSB order
-      const position = i % 2
-      const charset = position ? odd : even
-      const charsetLen = position ? lenOdd : lenEven
+      const bits = byte.toString(2).padStart(Ondergoed.RANGE, '0')
 
-      let runChar = bits[0]
-      let runLength = 1
+      const position = i % 2
+      const charset = position ? b : a
+      const characterCount = position ? sizeB : sizeA
+
+      let currentCharacter = bits[0]
+      let count = 1
 
       for (let j = 1; j < Ondergoed.RANGE; j++) {
-        if (bits[j] === runChar) {
-          runLength++
+        if (bits[j] === currentCharacter) {
+          count++
         } else {
-          const idx = (runLength - 1) % charsetLen
-          const ch = charset[idx]
+          const ii = (count - 1) % characterCount
+          const ch = charset[ii]
 
-          encoded.push(runChar === '0' ? ch : ch.toUpperCase())
-          runChar = bits[j]
-          runLength = 1
+          encoded.push(currentCharacter === '0' ? ch : ch.toUpperCase())
+          currentCharacter = bits[j]
+          count = 1
         }
       }
 
-      const address = (runLength - 1) % charsetLen
+      const address = (count - 1) % characterCount
       const result = charset[address]
 
-      encoded.push(runChar === '0' ? result : result.toUpperCase())
+      encoded.push(currentCharacter === '0' ? result : result.toUpperCase())
     }
 
     return encoded.join('')
-  }
-
-  /**
-   * Decode an encoded string back into its original format.
-   * Uses precomputed lookup maps and accurate byte-parity tracking.
-   */
-  decode(value?: string, encoding?: BufferEncoding) {
-    if (!value || !value.length) {
-      return
-    }
-
-    const lookupA = this.lookupA
-    const lookupB = this.lookupB
-
-    const bits: string[] = []
-    let bitCount = 0
-    let byteIndex = 0
-
-    for (let i = 0; i < value.length; i++) {
-      const c = value[i]
-      const lower = c.toLowerCase()
-      const position = byteIndex % 2
-      const lookup = position ? lookupB : lookupA
-      const idx = lookup.get(lower) ?? 0
-      const runLen = idx + 1
-      const bit = c === lower ? '0' : '1'
-      const segment = bit.repeat(runLen)
-
-      bits.push(segment)
-      bitCount += runLen
-
-      while (bitCount >= Ondergoed.RANGE) {
-        bitCount -= Ondergoed.RANGE
-        byteIndex++
-      }
-    }
-
-    const joined = bits.join('')
-    const bytes: number[] = []
-
-    for (let i = 0; i < joined.length; i += Ondergoed.RANGE) {
-      const chunk = joined.slice(i, i + Ondergoed.RANGE)
-      if (chunk.length < Ondergoed.RANGE) break
-      bytes.push(parseInt(chunk, 2))
-    }
-
-    return Buffer.from(bytes).toString(encoding || 'utf8')
   }
 }
